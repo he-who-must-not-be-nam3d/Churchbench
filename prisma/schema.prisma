@@ -39,6 +39,7 @@ model Benchmark {
   groupId   String
   group     Group     @relation(fields: [groupId], references: [id])
   sections  Section[]
+  dueDate    DateTime?
   isClosed  Boolean   @default(false)
   createdAt DateTime  @default(now())
 

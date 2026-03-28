@@ -78,7 +78,7 @@ export default async function DashboardLayout({
                     href="/dashboard/my-benchmark"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-blue-50 rounded-xl transition-all"
                   >
-                    Submit Benchmarks
+                    Self Evaluation
                   </Link>
                 )}
 
