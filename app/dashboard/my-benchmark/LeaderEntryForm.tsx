@@ -1,29 +1,38 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { updateSelfValue } from "./actions";
 import Toast from "@/components/Toast";
 import EvidenceModal from "@/components/EvidenceModal";
 
 export default function LeaderEntryForm({
   sections = [],
-  isLocked = false, // Received from parent page.tsx
+  isLocked = false,
 }: {
   sections: any[];
   isLocked?: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState(sections[0]?.code || "A");
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [notification, setNotification] = useState<any>(null);
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [selectedCriteria, setSelectedCriteria] = useState<any>(null);
-
   const [isPending, startTransition] = useTransition();
 
-  const currentIndex = sections.findIndex((s) => s.code === activeTab);
-  const currentSection = sections[currentIndex] || sections[0];
+  // Initialize the first tab once data is available
+  useEffect(() => {
+    if (sections.length > 0 && !activeTab) {
+      setActiveTab(sections[0].code);
+    }
+  }, [sections, activeTab]);
+
+  const currentSection =
+    sections.find((s) => s.code === activeTab) || sections[0];
+  const currentIndex = sections.findIndex(
+    (s) => s.code === (activeTab || sections[0]?.code),
+  );
 
   const handleUpdate = async (criteriaId: string, value: number) => {
-    if (isLocked) return; // Guard clause
+    if (isLocked) return;
     setIsSaving(criteriaId);
     try {
       await updateSelfValue({ criteriaId, selfValue: value });
@@ -53,6 +62,9 @@ export default function LeaderEntryForm({
       handleTabChange(sections[currentIndex - 1].code);
     }
   };
+
+  if (!sections || sections.length === 0) return null;
+  if (!currentSection) return null;
 
   return (
     <div className="space-y-6 pb-32">
@@ -88,7 +100,7 @@ export default function LeaderEntryForm({
         </div>
       )}
 
-      {/* Pillar Tabs */}
+      {/* PILLAR TABS */}
       <div className="flex bg-white p-2 rounded-2xl border border-slate-200 overflow-x-auto gap-2 shadow-sm sticky top-0 md:top-20 z-10 scrollbar-hide">
         {sections.map((s) => (
           <button
@@ -105,110 +117,91 @@ export default function LeaderEntryForm({
         ))}
       </div>
 
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-500">
-        <div className="px-6 md:px-10 py-8 bg-slate-900 text-white flex justify-between items-center">
-          <div>
-            <h3 className="text-2xl font-bold">
-              {currentSection.code}. {currentSection.title}
-            </h3>
-            <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-1">
-              Self-Reporting Portal
-            </p>
-          </div>
+      {/* CONTENT CARD */}
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 md:px-10 py-8 bg-slate-900 text-white">
+          <h3 className="text-2xl font-bold uppercase tracking-tight">
+            {currentSection.code}. {currentSection.title}
+          </h3>
+          <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-1">
+            Self-Reporting Portal
+          </p>
         </div>
 
-        {/* MOBILE STACKED VIEW */}
-        <div className="md:hidden divide-y divide-slate-100">
-          {currentSection.criteria.map((c: any) => {
+        <div className="divide-y divide-slate-100">
+          {currentSection.criteria?.map((c: any) => {
             const variance = (c.selfValue || 0) - c.target;
             const isMet = variance >= 0;
             const hasEvidence = c.evidence && c.evidence.length > 0;
 
             return (
-              <div
-                key={c.id}
-                className={`p-6 space-y-4 relative ${isSaving === c.id ? "bg-blue-50/50" : ""}`}
-              >
-                <div className="flex items-start gap-3">
+              <div key={c.id} className="p-6 md:px-10 space-y-4">
+                <div className="flex items-start gap-4">
                   <span className="shrink-0 bg-blue-100 text-blue-700 h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-black">
                     {c.serialNo}
                   </span>
-                  <div className="space-y-1">
+                  <div className="flex-1 space-y-1">
                     <p className="text-sm font-bold text-slate-800 leading-snug">
                       {c.description}
                     </p>
                     {hasEvidence && (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-tight">
-                        <span className="h-1 w-1 bg-emerald-600 rounded-full" />
-                        {c.evidence.length} Evidence Uploaded
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tight">
+                        ● {c.evidence.length} Evidence Uploaded
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-slate-50 p-3 rounded-2xl text-center">
-                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-slate-50 p-3 rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1 text-center">
                       Target
                     </p>
-                    <p className="text-sm font-black text-slate-900">
+                    <p className="text-sm font-black text-slate-900 text-center">
                       {c.target}{" "}
                       <span className="text-[8px] opacity-50">
                         {c.unitOfMeasure}
                       </span>
                     </p>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-2xl text-center">
-                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">
+                  <div className="bg-slate-50 p-3 rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1 text-center">
                       Variance
                     </p>
                     <p
-                      className={`text-sm font-black ${isMet ? "text-emerald-600" : "text-rose-600"}`}
+                      className={`text-sm font-black text-center ${isMet ? "text-emerald-600" : "text-rose-600"}`}
                     >
                       {isMet ? "+" : ""}
                       {variance}
                     </p>
                   </div>
-                  <button
-                    disabled={isLocked}
-                    onClick={() => setSelectedCriteria(c)}
-                    className={`p-3 rounded-2xl text-center flex flex-col items-center justify-center border transition-all active:scale-95 ${
-                      isLocked
-                        ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed"
-                        : hasEvidence
-                          ? "bg-emerald-50 border-emerald-100 text-emerald-600 cursor-pointer"
-                          : "bg-blue-50 border-blue-100 text-blue-600 cursor-pointer"
-                    }`}
-                  >
-                    <span className="text-[8px] font-black uppercase">
-                      {hasEvidence ? "View/Add" : "Evidence"}
-                    </span>
-                  </button>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">
-                    Actual Achievement
-                  </label>
-                  <div className="relative">
+                  <div className="col-span-1">
                     <input
                       type="number"
-                      inputMode="numeric"
                       disabled={isLocked}
                       defaultValue={c.selfValue || ""}
-                      className={`w-full p-4 border-2 rounded-[20px] text-center font-black text-lg outline-none shadow-sm transition-all ${
+                      placeholder="0"
+                      className={`w-full p-3 border-2 rounded-2xl text-center font-black outline-none transition-all ${
                         isLocked
                           ? "bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed"
-                          : "bg-white border-slate-100 text-slate-900 focus:border-blue-500 cursor-text"
+                          : "bg-white border-slate-100 focus:border-blue-500"
                       }`}
                       onBlur={(e) => handleUpdate(c.id, Number(e.target.value))}
                     />
-                    {isSaving === c.id && (
-                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-[20px] flex items-center justify-center">
-                        <div className="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
                   </div>
+
+                  <button
+                    disabled={isLocked}
+                    onClick={() => setSelectedCriteria(c)}
+                    className={`p-3 rounded-2xl font-black text-[10px] uppercase border transition-all ${
+                      isLocked
+                        ? "opacity-30 grayscale cursor-not-allowed"
+                        : "cursor-pointer active:scale-95"
+                    } ${hasEvidence ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-blue-50 text-blue-600 border-blue-100"}`}
+                  >
+                    {hasEvidence ? "View Evidence" : "+ Add Proof"}
+                  </button>
                 </div>
               </div>
             );
@@ -216,73 +209,24 @@ export default function LeaderEntryForm({
         </div>
       </div>
 
-      {/* FLOATING NAVIGATION FOOTER */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-lg bg-slate-900/95 backdrop-blur-md p-2 rounded-[24px] shadow-2xl border border-white/10 z-30 flex items-center justify-between">
+      {/* FOOTER NAV BAR */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-lg bg-slate-900 p-2 rounded-[24px] shadow-2xl flex items-center justify-between z-50">
         <button
           onClick={goToPrev}
-          disabled={currentIndex === 0 || isPending}
-          className="flex items-center gap-2 px-6 py-3 text-white disabled:opacity-20 transition-opacity cursor-pointer group"
+          disabled={currentIndex === 0}
+          className="px-6 py-3 text-white disabled:opacity-20 cursor-pointer"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 group-active:-translate-x-1 transition-transform"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Back
-          </span>
+          <span className="text-[10px] font-black uppercase">Back</span>
         </button>
-
-        <div className="h-8 w-px bg-white/10" />
-
-        <div className="text-center min-w-[80px] flex flex-col items-center justify-center">
-          {isPending ? (
-            <div className="h-5 w-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin my-1"></div>
-          ) : (
-            <>
-              <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em]">
-                Pillar
-              </p>
-              <p className="text-sm font-black text-white">
-                {currentSection.code}
-              </p>
-            </>
-          )}
+        <div className="text-white font-black text-xs uppercase tracking-widest">
+          Pillar {currentSection.code}
         </div>
-
-        <div className="h-8 w-px bg-white/10" />
-
         <button
           onClick={goToNext}
-          disabled={currentIndex === sections.length - 1 || isPending}
-          className="flex items-center gap-2 px-6 py-3 text-white disabled:opacity-20 transition-opacity cursor-pointer group"
+          disabled={currentIndex === sections.length - 1}
+          className="px-6 py-3 text-white disabled:opacity-20 cursor-pointer"
         >
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Next
-          </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 group-active:translate-x-1 transition-transform"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <span className="text-[10px] font-black uppercase">Next</span>
         </button>
       </div>
 
@@ -290,7 +234,7 @@ export default function LeaderEntryForm({
         <EvidenceModal
           criteria={selectedCriteria}
           onClose={() => setSelectedCriteria(null)}
-          isLocked={isLocked} // Ensure modal also knows if it should disable uploads
+          isLocked={isLocked}
         />
       )}
     </div>
