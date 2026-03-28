@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0070f3;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-church-blue: var(--background);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Responsive table handling for mobile: no horizontal scroll, row cards */
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+    border: 0;
+  }
+
+  .responsive-table thead,
+  .responsive-table th {
+    display: none;
+  }
+
+  .responsive-table tbody,
+  .responsive-table tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+  }
+
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid #edf2f7;
+    position: relative;
+    width: 100%;
+    min-height: 2rem;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .responsive-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .responsive-table td:before {
+    content: attr(data-label);
+    flex: 1;
+    font-weight: 700;
+    color: #475569;
+    margin-right: 0.75rem;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    white-space: normal;
+  }
+
+  .responsive-table td > * {
+    flex: 2;
+    text-align: right;
+    width: 100%;
+  }
+
+  .responsive-table td > a,
+  .responsive-table td > button,
+  .responsive-table td > span,
+  .responsive-table td > div {
+    flex: 2;
+    width: 100%;
+  }
+
+  .responsive-table tr {
+    padding: 0.5rem;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+

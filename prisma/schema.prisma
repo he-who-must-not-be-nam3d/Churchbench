@@ -1,0 +1,85 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN      // System setup and document ingestion
+  REVIEWER   // LCC / Benchmark Committee members
+  LEADER     // Group officials (Youth, CWF, etc.)
+}
+
+model Group {
+  id         String      @id @default(cuid())
+  name       String      @unique // e.g., "Youth Fellowship"
+  users      User[]
+  benchmarks Benchmark[]
+  createdAt  DateTime    @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed password
+  role      Role     @default(LEADER)
+  groupId   String?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Benchmark {
+  id        String    @id @default(cuid())
+  year      String    // e.g., "2024/2025" [cite: 3]
+  groupId   String
+  group     Group     @relation(fields: [groupId], references: [id])
+  sections  Section[]
+  isClosed  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@unique([year, groupId])
+}
+
+model Section {
+  id          String     @id @default(cuid())
+  code        String     // A, B, C, D, E, F, G [cite: 39-46]
+  title       String     // e.g., "SPIRITUAL GROWTH" [cite: 43]
+  weightTotal Float      // The sub-total weight for this section 
+  benchmarkId String
+  benchmark   Benchmark  @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  criteria    Criteria[]
+}
+
+model Criteria {
+  id            String   @id @default(cuid())
+  serialNo      String   // e.g., "D1.1" 
+  description   String   @db.Text
+  unitOfMeasure String   // %, No's, Kshs 
+  weight        Float    // The weight assigned to this specific task 
+  target        Float    // The numeric goal for the year 
+  
+  // Performance Tracking
+  selfValue     Float    @default(0) // What the Leader claims
+  reviewerScore Float    @default(0) // What the Reviewer verifies
+  reviewerNote  String?  @db.Text    // Feedback on why a score was given
+  
+  sectionId     String
+  section       Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  evidence      Evidence[]
+  updatedAt     DateTime @updatedAt
+}
+
+model Evidence {
+  id         String   @id @default(cuid())
+  fileName   String
+  filePath   String   // Path to the external storage folder
+  fileType   String   // e.g., "application/pdf" or "image/jpeg"
+  criteriaId String
+  criteria   Criteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+  uploadedAt DateTime @default(now())
+}
